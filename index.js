@@ -4,7 +4,7 @@ const gmail = require('./gmail.js');
 
 if (!process.env.GOOGLE_CREDS) throw new Error('GOOGLE_CREDS required');
 if (!process.env.JOBSEEKER_ID) throw new Error('JOBSEEKER_ID required');
-if (!process.env.JOBSEEKER_EMAIL) throw new Error('JOBSEEKER_EMAIL required');
+if (!process.env.JOBSEEKER_FROM) throw new Error('JOBSEEKER_FROM required');
 
 const credentials = JSON.parse(process.env.GOOGLE_CREDS);
 
@@ -42,14 +42,13 @@ async function init(creds) {
 
   let cnt = 0;
   for (let i = 0; i < messages.length; i++) {
-    // TODO: Get from address
-    let from = '';
-    let to = process.env.JOBSEEKER_EMAIL;
-    if (process.env.JOBSEEKER_MODE === 'test') to = from;
+    let to = process.env.JOBSEEKER_TO || 'jobsearcheffort@employment.gov.au';
+    // Send to self in test mode.
+    if (process.env.JOBSEEKER_MODE === 'test') to = process.env.JOBSEEKER_FROM;
     await gmail.sendMessage(
       oAuth2Client,
       to,
-      from,
+      process.env.JOBSEEKER_FROM,
       'FWD Job Application Confirmation - ' + process.env.JOBSEEKER_ID,
       messages[i].plainDecoded
     );

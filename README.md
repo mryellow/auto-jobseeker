@@ -15,7 +15,8 @@ Configuration information may be provided by adding a local `.env` file.
 ```
 JOBSEEKER_MODE=test
 JOBSEEKER_ID=XXX
-JOBSEEKER_EMAIL=autojobseeker@example.com
+JOBSEEKER_TO=jobsearcheffort@employment.gov.au
+JOBSEEKER_FROM=autojobseeker@example.com
 ```
 
 ### Setup
