@@ -48,14 +48,24 @@ async function init(creds) {
     // Send to self in test mode.
     if (process.env.JOBSEEKER_MODE === 'test') to = process.env.JOBSEEKER_FROM;
 
-    /* TODO: Add decoration.
-    ```
-    ++++++++++ Forwarded message ++++++++++
-    From: SEEK Apply <service@s.seek.com.au>
-    Date: 11 August 2018 at 13:09
-    Subject: Your application was successfully submitted
-    To: seek@example.com
-    ```
+    // TODO: Is fwd "header" needed?
+    /*
+    // Map headers to object
+    let headers = {};
+    for (let j = 0; j < messages[i].payload.headers.length; j++) {
+      headers[messages[i].payload.headers[j].name] =
+        messages[i].payload.headers[j].value;
+    }
+
+    // Create forward meta-data
+    let fwd = [
+      '---------- Forwarded message ----------\n',
+      'From: ' + headers['From'] + '\n',
+      'Date: ' + headers['Date'] + '\n',
+      'Subject: ' + headers['Subject'] + '\n',
+      'To: ' + headers['To'] + '\n',
+      '\n'
+    ].join('');
     */
 
     await gmail.sendMessage(
@@ -63,7 +73,8 @@ async function init(creds) {
       to,
       process.env.JOBSEEKER_FROM,
       'FW Job Application Confirmation - ' + process.env.JOBSEEKER_ID,
-      messages[i].decoded
+      messages[i].decoded['text/plain'],
+      messages[i].decoded['text/html']
     );
 
     await gmail.markAsRead(oAuth2Client, messages[i].id);

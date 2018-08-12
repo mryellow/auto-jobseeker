@@ -154,15 +154,13 @@ const cor = {
         (err, res) => {
           if (err) return reject(new Error(err));
 
-          let body = ''; //res.data.payload.body.data;
-          if (!body) {
-            for (let j = 0; j < res.data.payload.parts.length; j++) {
-              if (res.data.payload.parts[j].mimeType === 'text/plain') {
-                body += res.data.payload.parts[j].body.data;
-              }
-            }
+          let body = {}; //res.data.payload.body.data;
+          for (let j = 0; j < res.data.payload.parts.length; j++) {
+            body[res.data.payload.parts[j].mimeType] = cor.decodeMessage(
+              res.data.payload.parts[j].body.data
+            );
           }
-          res.data.decoded = cor.decodeMessage(body);
+          res.data.decoded = body;
 
           resolve(res.data);
         }
@@ -176,15 +174,15 @@ const cor = {
    * @param {String} to To email address
    * @param {String} from From email address
    * @param {String} subject Message subject.
-   * @param {String} message Message body.
+   * @param {String} bodyText Message body text/plain.
+   * @param {String} bodyHtml Message body text/html.
    */
   // TODO: Make multipart messages with same parts as original.
   // FIXME: `from` is ignored, must be an alias?
-  makeMessage: (to, from, subject, message) => {
-    var str = [
-      'Content-Type: text/plain; charset="UTF-8"\n',
+  makeMessage: (to, from, subject, bodyText, bodyHtml) => {
+    const boundary = new Date().getTime();
+    let str = [
       'MIME-Version: 1.0\n',
-      'Content-Transfer-Encoding: 7bit\n',
       'to: ',
       to,
       '\n',
@@ -193,8 +191,24 @@ const cor = {
       '\n',
       'subject: ',
       subject,
+      '\n',
+      'Content-Type: multipart/alternative; boundary="' + boundary + '"\n',
+      '\n',
+      '--' + boundary + '\n',
+      'Content-Type: text/plain; charset="UTF-8"\n',
+      'Content-Transfer-Encoding: 7bit\n',
+      //'Content-Transfer-Encoding: quoted-printable\n',
+      '\n',
+      bodyText,
+      '\n',
+      '--' + boundary + '\n',
+      'Content-Type: text/html; charset="UTF-8"\n',
+      'Content-Transfer-Encoding: 7bit\n',
+      //'Content-Transfer-Encoding: quoted-printable\n',
+      '\n',
+      bodyHtml,
       '\n\n',
-      message
+      '--' + boundary + '--\n'
     ].join('');
 
     return cor.encodeMessage(str);
@@ -207,16 +221,17 @@ const cor = {
    * @param {String} to To email address
    * @param {String} from From email address
    * @param {String} subject Message subject.
-   * @param {String} message Message body.
+   * @param {String} bodyText Message body text/plain.
+   * @param {String} bodyHtml Message body text/html.
    */
-  sendMessage: (auth, to, from, subject, message) => {
+  sendMessage: (auth, to, from, subject, bodyText, bodyHtml) => {
     return new Promise(function(resolve, reject) {
       const gmail = google.gmail({ auth: auth, version: 'v1' });
       gmail.users.messages.send(
         {
           userId: 'me',
           resource: {
-            raw: cor.makeMessage(to, from, subject, message)
+            raw: cor.makeMessage(to, from, subject, bodyText, bodyHtml)
           }
         },
         (err, res) => {
