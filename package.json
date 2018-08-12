@@ -1,7 +1,7 @@
 {
   "name": "auto-jobseeker",
   "version": "0.0.1",
-  "description": "",
+  "description": "Taking the onerous data-entry pain out of compliance forms.",
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
