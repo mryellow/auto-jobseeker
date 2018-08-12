@@ -14,6 +14,29 @@ const cor = {
   project_id: '',
 
   /**
+   * Encode email message
+   * @param {String} message Text to encode
+   */
+  encodeMessage: message => {
+    return Buffer.from(message).toString('base64');
+    //.replace(/\+/g, '-')
+    //.replace(/\//g, '_');
+  },
+
+  /**
+   * Decode email message
+   * @param {String} message Text to decode
+   */
+  decodeMessage: message => {
+    return (
+      Buffer.from(message, 'base64')
+        //.replace(/\-/g, '+')
+        //.replace(/\_/g, '/')
+        .toString('ascii')
+    );
+  },
+
+  /**
    * Create an OAuth2 client with the given credentials, and then execute the
    * given callback function.
    * @param {Object} credentials The authorization client credentials.
@@ -99,9 +122,7 @@ const cor = {
    */
   listMessages: (auth, labelIds) => {
     return new Promise(function(resolve, reject) {
-      const gmail = google
-        .gmail({ auth: auth, version: 'v1' })
-        .catch(err => console.error);
+      const gmail = google.gmail({ auth: auth, version: 'v1' });
       gmail.users.messages.list(
         {
           includeSpamTrash: false,
@@ -129,9 +150,21 @@ const cor = {
         {
           userId: 'me',
           id: messageId
+          //format: 'full'
         },
         (err, res) => {
           if (err) return reject(new Error(err));
+
+          res.data;
+
+          let body = '';
+          for (let j = 0; j < res.data.payload.parts.length; j++) {
+            if (res.data.payload.parts[j].mimeType === 'text/plain') {
+              body += res.data.payload.parts[j].body.data;
+            }
+          }
+          res.data.plainDecoded = cor.decodeMessage(body);
+
           resolve(res.data);
         }
       );
@@ -163,11 +196,7 @@ const cor = {
       message
     ].join('');
 
-    var encodedMail = new Buffer(str)
-      .toString('base64')
-      .replace(/\+/g, '-')
-      .replace(/\//g, '_');
-    return encodedMail;
+    return cor.encodeMessage(str);
   },
 
   /**

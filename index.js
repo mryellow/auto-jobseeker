@@ -13,50 +13,37 @@ if (process.env.JOBSEEKER_MODE === 'test') {
 const JOBSEEKER_LABEL = 'AutoJobseeker';
 
 async function findLabel(auth) {
-  const labels = await gmail.listLabels(auth).catch(err => console.error);
+  const labels = await gmail.listLabels(auth); //.catch(err => console.error);
   return labels.find(item => {
     return item.name === JOBSEEKER_LABEL;
   });
 }
 
 async function listMessages(auth, label) {
-  console.log('listMessages', label);
-  const msgs = await gmail
-    .listMessages(auth, ['UNREAD', label])
-    .catch(err => console.error);
+  const msgs = await gmail.listMessages(auth, ['UNREAD', label]);
+  //.catch(err => console.error);
   if (!msgs) throw new Error('No messages found');
 
   let res = [];
   for (let i = 0; i < msgs.length; i++) {
-    const getMessage = await gmail
-      .getMessage(auth, msgs[i].id)
-      .catch(err => console.error);
+    const getMessage = await gmail.getMessage(auth, msgs[i].id);
+    //.catch(err => console.error);
     res.push(getMessage);
-    console.log(getMessage.id, getMessage.threadId, getMessage.labelIds);
+    console.log('Message', getMessage.id, getMessage.labelIds);
   }
   return res;
 }
 
 async function init(creds) {
-  const oAuth2Client = await gmail
-    .authorize(JSON.parse(creds))
-    .catch(err => console.error);
+  const oAuth2Client = await gmail.authorize(JSON.parse(creds));
+  //.catch(err => console.error);
+  if (!oAuth2Client) throw new Error('Authorisation failed.');
+
   const label = await findLabel(oAuth2Client);
   if (!label) throw new Error('Unable to find label: ' + JOBSEEKER_LABEL);
-  console.log('Found', label);
+  console.log('Label found: "%s".', label.id);
   const messages = await listMessages(oAuth2Client, label.id);
-  //console.log(messages);
 
-  let cnt = 0;
-  for (let i = 0; i < messages.length; i++) {
-    await gmail
-      .markAsRead(oAuth2Client, messages[i].id)
-      .catch(err => console.error);
-    cnt++;
-  }
-  console.log('Marked ' + cnt + ' messages as read.');
-
-  // TODO: FWD
   /*
   const sendMessage = await gmail.sendMessage(
     auth,
@@ -67,6 +54,19 @@ async function init(creds) {
   );
   console.log('sendMessage', sendMessage);
   */
+
+  let cnt = 0;
+  for (let i = 0; i < messages.length; i++) {
+    console.log(i, messages[i].plainDecoded);
+
+    /*
+    await gmail
+      .markAsRead(oAuth2Client, messages[i].id);
+      //.catch(err => console.error);
+    */
+    cnt++;
+  }
+  console.log('Marked %d messages as read.', cnt);
 }
 
 const creds = fs.readFileSync('credentials.json');
