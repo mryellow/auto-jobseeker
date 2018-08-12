@@ -45,6 +45,17 @@ async function init(creds) {
     let to = process.env.JOBSEEKER_TO || 'jobsearcheffort@employment.gov.au';
     // Send to self in test mode.
     if (process.env.JOBSEEKER_MODE === 'test') to = process.env.JOBSEEKER_FROM;
+
+    /* TODO: Add decoration.
+    ```
+    ++++++++++ Forwarded message ++++++++++
+    From: SEEK Apply <service@s.seek.com.au>
+    Date: 11 August 2018 at 13:09
+    Subject: Your application was successfully submitted
+    To: seek@example.com
+    ```
+    */
+
     await gmail.sendMessage(
       oAuth2Client,
       to,
