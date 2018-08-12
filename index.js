@@ -33,7 +33,7 @@ async function listMessages(auth, label) {
 }
 
 async function init(creds) {
-  const oAuth2Client = await gmail.authorize(JSON.parse(creds));
+  const oAuth2Client = await gmail.authorize(creds);
   if (!oAuth2Client) throw new Error('Authorisation failed.');
 
   const label = await findLabel(oAuth2Client);
@@ -64,6 +64,6 @@ async function init(creds) {
 
 const creds = fs.readFileSync('credentials.json');
 if (!creds) throw new Error('Error loading client secret file');
-init(creds).catch(err => {
+init(JSON.parse(creds)).catch(err => {
   console.log(err);
 });
