@@ -33,6 +33,7 @@ async function listMessages(auth, label) {
 }
 
 async function init(creds) {
+  if (!creds) throw new Error('Error loading client secret file');
   const oAuth2Client = await gmail.authorize(creds);
   if (!oAuth2Client) throw new Error('Authorisation failed.');
 
@@ -63,7 +64,6 @@ async function init(creds) {
 }
 
 const creds = fs.readFileSync('credentials.json');
-if (!creds) throw new Error('Error loading client secret file');
 init(JSON.parse(creds)).catch(err => {
   console.log(err);
 });
