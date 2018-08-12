@@ -2,8 +2,11 @@ require('dotenv').config();
 const fs = require('fs');
 const gmail = require('./gmail.js');
 
+if (!process.env.GOOGLE_CREDS) throw new Error('GOOGLE_CREDS required');
 if (!process.env.JOBSEEKER_ID) throw new Error('JOBSEEKER_ID required');
 if (!process.env.JOBSEEKER_EMAIL) throw new Error('JOBSEEKER_EMAIL required');
+
+const credentials = JSON.parse(process.env.GOOGLE_CREDS);
 
 let destination = 'test@example.com';
 if (process.env.JOBSEEKER_MODE === 'test') {
@@ -59,7 +62,7 @@ async function init(creds) {
   console.log('Marked %d messages as read.', cnt);
 }
 
-const creds = fs.readFileSync('credentials.json');
-init(JSON.parse(creds)).catch(err => {
+//const credentials = JSON.parse(fs.readFileSync('credentials.json'));
+init(credentials).catch(err => {
   console.log(err);
 });
