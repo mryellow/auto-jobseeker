@@ -179,6 +179,7 @@ const cor = {
    * @param {String} message Message body.
    */
   // TODO: Make multipart messages with same parts as original.
+  // FIXME: `from` is ignored, must be an alias?
   makeMessage: (to, from, subject, message) => {
     var str = [
       'Content-Type: text/plain; charset="UTF-8"\n',
