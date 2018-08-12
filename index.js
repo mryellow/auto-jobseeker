@@ -17,7 +17,8 @@ async function findLabel(auth) {
 
 async function listMessages(auth, label) {
   const msgs = await gmail.listMessages(auth, ['UNREAD', label]);
-  if (!msgs) throw new Error('No messages found');
+  // Exit without error when no messages.
+  if (!msgs) process.exit(); //throw new Error('No messages found');
 
   let res = [];
   for (let i = 0; i < msgs.length; i++) {
