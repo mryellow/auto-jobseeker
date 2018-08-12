@@ -8,11 +8,6 @@ if (!process.env.JOBSEEKER_EMAIL) throw new Error('JOBSEEKER_EMAIL required');
 
 const credentials = JSON.parse(process.env.GOOGLE_CREDS);
 
-let destination = 'test@example.com';
-if (process.env.JOBSEEKER_MODE === 'test') {
-  destination = process.env.JOBSEEKER_EMAIL;
-}
-
 const JOBSEEKER_LABEL = process.env.JOBSEEKER_LABEL || 'AutoJobseeker';
 
 async function findLabel(auth) {
@@ -47,10 +42,14 @@ async function init(creds) {
 
   let cnt = 0;
   for (let i = 0; i < messages.length; i++) {
+    // TODO: Get from address
+    let from = '';
+    let to = process.env.JOBSEEKER_EMAIL;
+    if (process.env.JOBSEEKER_MODE === 'test') to = from;
     await gmail.sendMessage(
       oAuth2Client,
-      destination,
-      process.env.JOBSEEKER_EMAIL,
+      to,
+      from,
       'FWD Job Application Confirmation - ' + process.env.JOBSEEKER_ID,
       messages[i].plainDecoded
     );
