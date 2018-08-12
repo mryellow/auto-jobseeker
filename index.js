@@ -50,14 +50,14 @@ async function init(creds) {
       to,
       process.env.JOBSEEKER_FROM,
       'FWD Job Application Confirmation - ' + process.env.JOBSEEKER_ID,
-      messages[i].plainDecoded
+      messages[i].decoded
     );
 
     await gmail.markAsRead(oAuth2Client, messages[i].id);
     console.log(new Date().toISOString(), 'Processed message', messages[i].id);
     cnt++;
   }
-  console.log('Marked %d messages as read.', cnt);
+  console.log('Finished %d messages.', cnt);
 }
 
 //const credentials = JSON.parse(fs.readFileSync('credentials.json'));

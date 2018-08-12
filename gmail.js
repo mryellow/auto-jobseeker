@@ -18,9 +18,10 @@ const cor = {
    * @param {String} message Text to encode
    */
   encodeMessage: message => {
-    return Buffer.from(message).toString('base64');
-    //.replace(/\+/g, '-')
-    //.replace(/\//g, '_');
+    return Buffer.from(message)
+      .toString('base64')
+      .replace(/\+/g, '-')
+      .replace(/\//g, '_');
   },
 
   /**
@@ -28,12 +29,10 @@ const cor = {
    * @param {String} message Text to decode
    */
   decodeMessage: message => {
-    return (
-      Buffer.from(message, 'base64')
-        //.replace(/\-/g, '+')
-        //.replace(/\_/g, '/')
-        .toString('ascii')
-    );
+    return Buffer.from(message, 'base64')
+      .toString('ascii')
+      .replace(/\-/g, '+')
+      .replace(/\_/g, '/');
   },
 
   /**
@@ -155,7 +154,7 @@ const cor = {
         (err, res) => {
           if (err) return reject(new Error(err));
 
-          let body = res.data.payload.body.data;
+          let body = ''; //res.data.payload.body.data;
           if (!body) {
             for (let j = 0; j < res.data.payload.parts.length; j++) {
               if (res.data.payload.parts[j].mimeType === 'text/plain') {
@@ -163,7 +162,7 @@ const cor = {
               }
             }
           }
-          res.plainDecoded = cor.decodeMessage(body);
+          res.data.decoded = cor.decodeMessage(body);
 
           resolve(res.data);
         }
@@ -179,6 +178,7 @@ const cor = {
    * @param {String} subject Message subject.
    * @param {String} message Message body.
    */
+  // TODO: Make multipart messages with same parts as original.
   makeMessage: (to, from, subject, message) => {
     var str = [
       'Content-Type: text/plain; charset="UTF-8"\n',
