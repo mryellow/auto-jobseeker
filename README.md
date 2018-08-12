@@ -5,7 +5,7 @@ Taking the onerous data-entry pain out of compliance forms.
 ### Mode of action
 
 - Checks for `UNREAD` emails with `AutoJobseeker` label.
-- Crafts the appropriate subject line `FW Job Application Confirmation - JOBSEEKER_ID`
+- Crafts the appropriate subject line `FWD Job Application Confirmation - JOBSEEKER_ID`
 - Forwards email to `jobsearcheffort@employment.gov.au` from `JOBSEEKER_EMAIL`.
 
 ### Configuration
