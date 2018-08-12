@@ -17,6 +17,7 @@ JOBSEEKER_MODE=test
 JOBSEEKER_ID=XXX
 JOBSEEKER_TO=jobsearcheffort@employment.gov.au
 JOBSEEKER_FROM=autojobseeker@example.com
+GOOGLE_CREDS={"installed":{"client_id":"XXXX"...
 ```
 
 ### Setup
