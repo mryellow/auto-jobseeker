@@ -21,6 +21,6 @@ JOBSEEKER_EMAIL=autojobseeker@example.com
 ### Setup
 
 - Create a new ["oAuth client ID"](https://console.developers.google.com/apis/credentials).
-- Download the JSON and save as `credentials.json`.
+- Download the credentials JSON and copy it into `GOOGLE_CREDS` environment.
 - Create a label `AutoJobseeker` and filter messages into this label.
 - Run `node .` on this repository periodically.
