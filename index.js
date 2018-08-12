@@ -53,11 +53,7 @@ async function init(creds) {
     );
 
     await gmail.markAsRead(oAuth2Client, messages[i].id);
-    console.log(
-      new Date().toISOString(),
-      'Processed message %s.',
-      messages[i].id
-    );
+    console.log(new Date().toISOString(), 'Processed message', messages[i].id);
     cnt++;
   }
   console.log('Marked %d messages as read.', cnt);
