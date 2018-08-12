@@ -155,15 +155,15 @@ const cor = {
         (err, res) => {
           if (err) return reject(new Error(err));
 
-          res.data;
-
-          let body = '';
-          for (let j = 0; j < res.data.payload.parts.length; j++) {
-            if (res.data.payload.parts[j].mimeType === 'text/plain') {
-              body += res.data.payload.parts[j].body.data;
+          let body = res.data.payload.body.data;
+          if (!body) {
+            for (let j = 0; j < res.data.payload.parts.length; j++) {
+              if (res.data.payload.parts[j].mimeType === 'text/plain') {
+                body += res.data.payload.parts[j].body.data;
+              }
             }
           }
-          res.data.plainDecoded = cor.decodeMessage(body);
+          res.plainDecoded = cor.decodeMessage(body);
 
           resolve(res.data);
         }
