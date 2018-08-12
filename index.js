@@ -62,7 +62,7 @@ async function init(creds) {
       oAuth2Client,
       to,
       process.env.JOBSEEKER_FROM,
-      'FWD Job Application Confirmation - ' + process.env.JOBSEEKER_ID,
+      'FW Job Application Confirmation - ' + process.env.JOBSEEKER_ID,
       messages[i].decoded
     );
 
