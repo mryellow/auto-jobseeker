@@ -6,8 +6,6 @@ if (!process.env.GOOGLE_CREDS) throw new Error('GOOGLE_CREDS required');
 if (!process.env.JOBSEEKER_ID) throw new Error('JOBSEEKER_ID required');
 if (!process.env.JOBSEEKER_FROM) throw new Error('JOBSEEKER_FROM required');
 
-const credentials = JSON.parse(process.env.GOOGLE_CREDS);
-
 const JOBSEEKER_LABEL = process.env.JOBSEEKER_LABEL || 'AutoJobseeker';
 
 async function findLabel(auth) {
@@ -72,6 +70,7 @@ async function init(creds) {
 }
 
 //const credentials = JSON.parse(fs.readFileSync('credentials.json'));
+const credentials = JSON.parse(process.env.GOOGLE_CREDS);
 init(credentials).catch(err => {
   console.log(err);
 });
