@@ -10,7 +10,7 @@ if (process.env.JOBSEEKER_MODE === 'test') {
   destination = process.env.JOBSEEKER_EMAIL;
 }
 
-const JOBSEEKER_LABEL = 'AutoJobseeker';
+const JOBSEEKER_LABEL = process.env.JOBSEEKER_LABEL || 'AutoJobseeker';
 
 async function findLabel(auth) {
   const labels = await gmail.listLabels(auth);
