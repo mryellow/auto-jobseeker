@@ -80,13 +80,29 @@ const cor = {
       });
       rl.question('Enter the code from that page here: ', code => {
         rl.close();
+        // TODO: This will be callback redirect after hitting URL in browser.
+        // FIXME: How to connect with `JOBSEEKER_ID`?
         oAuth2Client.getToken(code, (err, token) => {
           if (err) return reject(new Error('Error retrieving access token'));
           oAuth2Client.setCredentials(token);
+          /*
           fs.writeFile(TOKEN_PATH, JSON.stringify(token), err => {
             if (err) return reject(new Error(err));
             console.log('Token stored to', TOKEN_PATH);
           });
+          */
+          token.id = '';
+          pdb
+            .put(token)
+            .then(function(response) {
+              // handle response
+              res.json(response);
+            })
+            .catch(function(err) {
+              console.log(err);
+              res.status(err.status || 500);
+              res.json(err);
+            });
           resolve(oAuth2Client);
         });
       });

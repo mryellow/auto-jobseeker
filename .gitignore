@@ -1,4 +1,5 @@
 node_modules/
+jobseekers/
 credentials.json
 package-lock.json
 token.json

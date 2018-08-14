@@ -1,12 +1,25 @@
 require('dotenv').config();
 const fs = require('fs');
+const PouchDB = require('pouchdb-node');
 const gmail = require('./gmail.js');
 
 if (!process.env.GOOGLE_CREDS) throw new Error('GOOGLE_CREDS required');
-if (!process.env.JOBSEEKER_ID) throw new Error('JOBSEEKER_ID required');
-if (!process.env.JOBSEEKER_FROM) throw new Error('JOBSEEKER_FROM required');
+if (!process.env.DBNAME) throw new Error('DBNAME required');
 
 const JOBSEEKER_LABEL = process.env.JOBSEEKER_LABEL || 'AutoJobseeker';
+
+// TODO: Encapsulate duplication
+let pdb;
+if (process.env.DBHOST) {
+  pdb = new PouchDB(process.env.DBHOST + '/' + process.env.DBNAME, {
+    auth: {
+      username: process.env.DBUSER,
+      password: process.env.DBPWD
+    }
+  });
+} else {
+  pdb = new PouchDB(process.env.DBNAME);
+}
 
 async function findLabel(auth) {
   const labels = await gmail.listLabels(auth);
@@ -33,10 +46,21 @@ async function listMessages(auth, label) {
 }
 
 async function init(creds) {
-  if (!creds) throw new Error('Error loading client secret file');
-  const oAuth2Client = await gmail.authorize(creds);
-  if (!oAuth2Client) throw new Error('Authorisation failed.');
+  if (!creds) throw new Error('Error missing credentials.');
+  //const oAuth2Client = await gmail.authorize(creds);
+  //if (!oAuth2Client) throw new Error('Authorisation failed.');
 
+  // TODO: Loop through users in PouchDB and reconfigure `oAuth2Client`
+  pdb
+    .allDocs({
+      include_docs: true
+    })
+    .then(function(docs) {
+      console.log('docs', docs);
+      // oAuth2Client.setCredentials(JSON.parse(token));
+    });
+
+  /*
   const label = await findLabel(oAuth2Client);
   if (!label) throw new Error('Unable to find label: ' + JOBSEEKER_LABEL);
   console.log('Label found: "%s".', label.id);
@@ -44,12 +68,9 @@ async function init(creds) {
 
   let cnt = 0;
   for (let i = 0; i < messages.length; i++) {
-    let to = process.env.JOBSEEKER_TO || 'jobsearcheffort@employment.gov.au';
-    // Send to self in test mode.
-    if (process.env.JOBSEEKER_MODE === 'test') to = process.env.JOBSEEKER_FROM;
+    let destination =
+      process.env.JOBSEEKER_TO || 'jobsearcheffort@employment.gov.au';
 
-    // TODO: Is fwd "header" needed?
-    /*
     // Map headers to object
     let headers = {};
     for (let j = 0; j < messages[i].payload.headers.length; j++) {
@@ -57,21 +78,14 @@ async function init(creds) {
         messages[i].payload.headers[j].value;
     }
 
-    // Create forward meta-data
-    let fwd = [
-      '---------- Forwarded message ----------\n',
-      'From: ' + headers['From'] + '\n',
-      'Date: ' + headers['Date'] + '\n',
-      'Subject: ' + headers['Subject'] + '\n',
-      'To: ' + headers['To'] + '\n',
-      '\n'
-    ].join('');
-    */
+    // Send to self in test mode.
+    if (process.env.NODE_ENV !== 'production') destination = headers['To'];
 
     await gmail.sendMessage(
       oAuth2Client,
-      to,
-      process.env.JOBSEEKER_FROM,
+      destination,
+      headers['To'],
+      // TODO: Get `JOBSEEKER_ID` from PouchDB
       'FW Job Application Confirmation - ' + process.env.JOBSEEKER_ID,
       messages[i].decoded['text/plain'],
       messages[i].decoded['text/html']
@@ -82,6 +96,7 @@ async function init(creds) {
     cnt++;
   }
   console.log('Finished %d messages.', cnt);
+  */
 }
 
 //const credentials = JSON.parse(fs.readFileSync('credentials.json'));
