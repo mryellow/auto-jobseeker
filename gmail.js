@@ -15,7 +15,9 @@ class Gmail {
     this.client = new google.auth.OAuth2(
       client_id,
       client_secret,
-      redirect_uris[0]
+      process.env.NODE_ENV === 'production'
+        ? redirect_uris[1]
+        : redirect_uris[0]
     );
   }
 
