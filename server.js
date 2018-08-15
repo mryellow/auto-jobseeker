@@ -10,6 +10,9 @@ PouchDB.plugin(require('pouchdb-adapter-leveldb')).plugin(
   require('pouchdb-adapter-http')
 );
 
+if (!process.env.GOOGLE_CREDS) throw new Error('GOOGLE_CREDS required');
+if (!process.env.DBNAME) throw new Error('DBNAME required');
+
 const Gmail = require('./gmail.js');
 const gmail = new Gmail(JSON.parse(process.env.GOOGLE_CREDS));
 
@@ -80,12 +83,17 @@ app.get('/auth/google/callback', function(req, res) {
   res.render('callback', { code: req.query.code });
 });
 
-app.post('/auth/google/callback', async function(req, res) {
-  req.body.token = await gmail.getToken(req.body.code);
+app.post('/auth/google/callback', async function(req, res, next) {
+  req.body.token = await gmail
+    .getToken(req.body.code)
+    .catch(err => console.log(err.message));
+  if (!req.body.token) return next('Invalid token');
   delete req.body.code;
 
-  const existing = await pdb.get(req.body._id);
-  if (existing._rev) req.body._rev = existing._rev;
+  const existing = await pdb
+    .get(req.body._id)
+    .catch(err => console.log(err.message));
+  if (existing && existing._rev) req.body._rev = existing._rev;
   pdb
     .put(req.body)
     .then(function(response) {
@@ -102,6 +110,7 @@ app.post('/auth/google/callback', async function(req, res) {
 // Log errors
 app.use(function(err, req, res, next) {
   console.error(err);
+  res.render('error', { error: err });
 });
 
 app.listen(port, function() {
