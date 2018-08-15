@@ -1,106 +1,80 @@
-const fs = require('fs');
-const readline = require('readline');
 const { google } = require('googleapis');
 
-// If modifying these scopes, delete token.json.
 const SCOPES = [
   'https://www.googleapis.com/auth/gmail.readonly',
   'https://www.googleapis.com/auth/gmail.modify',
   'https://www.googleapis.com/auth/gmail.send'
 ];
-const TOKEN_PATH = 'token.json';
 
-const cor = {
-  project_id: '',
+class Gmail {
+  constructor(credentials) {
+    this.credentials = credentials.web;
+
+    const { client_secret, client_id, redirect_uris } = this.credentials;
+    // FIXME: Use current host as redirect URL.
+    this.client = new google.auth.OAuth2(
+      client_id,
+      client_secret,
+      redirect_uris[0]
+    );
+  }
 
   /**
    * Encode email message
    * @param {String} message Text to encode
    */
-  encodeMessage: message => {
+  encodeMessage(message) {
     return Buffer.from(message)
       .toString('base64')
       .replace(/\+/g, '-')
       .replace(/\//g, '_');
-  },
+  }
 
   /**
    * Decode email message
    * @param {String} message Text to decode
    */
-  decodeMessage: message => {
+  decodeMessage(message) {
     return Buffer.from(message, 'base64')
       .toString('ascii')
       .replace(/\-/g, '+')
       .replace(/\_/g, '/');
-  },
+  }
 
   /**
-   * Create an OAuth2 client with the given credentials, and then execute the
-   * given callback function.
-   * @param {Object} credentials The authorization client credentials.
+   * Retrieve URL for authorisation
    */
-  authorize: credentials => {
-    cor.project_id = credentials.installed.project_id;
-    return new Promise(function(resolve, reject) {
-      const { client_secret, client_id, redirect_uris } = credentials.installed;
-      const oAuth2Client = new google.auth.OAuth2(
-        client_id,
-        client_secret,
-        redirect_uris[0]
-      );
-
-      // Check if we have previously stored a token.
-      fs.readFile(TOKEN_PATH, (err, token) => {
-        if (err) {
-          resolve(cor.getNewToken(oAuth2Client));
-        } else {
-          oAuth2Client.setCredentials(JSON.parse(token));
-          resolve(oAuth2Client);
-        }
-      });
+  getAuthUrl() {
+    const authUrl = this.client.generateAuthUrl({
+      access_type: 'offline',
+      scope: SCOPES
     });
-  },
+    return authUrl;
+  }
 
   /**
-   * Get and store new token after prompting for user authorization, and then
-   * execute the given callback with the authorized OAuth2 client.
-   * @param {google.auth.OAuth2} oAuth2Client The OAuth2 client to get token for.
+   * Convert code into oAuth token
+   * @param {String} code Code returned to callback
    */
-  getNewToken: oAuth2Client => {
-    return new Promise(function(resolve, reject) {
-      const authUrl = oAuth2Client.generateAuthUrl({
-        access_type: 'offline',
-        scope: SCOPES
-      });
-      console.log('Authorize this app by visiting this url: ', authUrl);
-      const rl = readline.createInterface({
-        input: process.stdin,
-        output: process.stdout
-      });
-      rl.question('Enter the code from that page here: ', code => {
-        rl.close();
-        oAuth2Client.getToken(code, (err, token) => {
-          if (err) return reject(new Error('Error retrieving access token'));
-          oAuth2Client.setCredentials(token);
-          fs.writeFile(TOKEN_PATH, JSON.stringify(token), err => {
-            if (err) return reject(new Error(err));
-            console.log('Token stored to', TOKEN_PATH);
-          });
-          resolve(oAuth2Client);
-        });
+  getToken(code) {
+    return new Promise((resolve, reject) => {
+      this.client.getToken(code, (err, token) => {
+        if (err) return reject(new Error('Failed retrieving access token'));
+        //this.client.setCredentials(token);
+        resolve(token);
       });
     });
-  },
+  }
 
   /**
    * Lists the labels in the user's account.
    *
-   * @param {google.auth.OAuth2} auth An authorized OAuth2 client.
+   * @param {Object} token User's oAuth token
    */
-  listLabels: auth => {
-    return new Promise(function(resolve, reject) {
-      const gmail = google.gmail({ auth: auth, version: 'v1' });
+  listLabels(token) {
+    return new Promise((resolve, reject) => {
+      this.client.setCredentials(token);
+      const gmail = google.gmail({ auth: this.client, version: 'v1' });
       gmail.users.labels.list(
         {
           userId: 'me'
@@ -111,17 +85,18 @@ const cor = {
         }
       );
     });
-  },
+  }
 
   /**
    * Lists the messages in the user's account with matching labels.
    *
-   * @param {google.auth.OAuth2} auth An authorized OAuth2 client.
+   * @param {Object} token User's oAuth token
    * @param {Array} labelIds List of labels to filter.
    */
-  listMessages: (auth, labelIds) => {
-    return new Promise(function(resolve, reject) {
-      const gmail = google.gmail({ auth: auth, version: 'v1' });
+  listMessages(token, labelIds) {
+    return new Promise((resolve, reject) => {
+      this.client.setCredentials(token);
+      const gmail = google.gmail({ auth: this.client, version: 'v1' });
       gmail.users.messages.list(
         {
           includeSpamTrash: false,
@@ -134,39 +109,38 @@ const cor = {
         }
       );
     });
-  },
+  }
 
   /**
    * Retrieve message contents given an Id.
    *
-   * @param {google.auth.OAuth2} auth An authorized OAuth2 client.
+   * @param {Object} token User's oAuth token
    * @param {String} messageId Message unique identifier.
    */
-  getMessage: (auth, messageId) => {
-    return new Promise(function(resolve, reject) {
-      const gmail = google.gmail({ auth: auth, version: 'v1' });
+  getMessage(token, messageId) {
+    return new Promise((resolve, reject) => {
+      this.client.setCredentials(token);
+      const gmail = google.gmail({ auth: this.client, version: 'v1' });
       gmail.users.messages.get(
         {
           userId: 'me',
           id: messageId
-          //format: 'full'
         },
         (err, res) => {
           if (err) return reject(new Error(err));
 
-          let body = {}; //res.data.payload.body.data;
+          let body = {};
           for (let j = 0; j < res.data.payload.parts.length; j++) {
-            body[res.data.payload.parts[j].mimeType] = cor.decodeMessage(
+            body[res.data.payload.parts[j].mimeType] = this.decodeMessage(
               res.data.payload.parts[j].body.data
             );
           }
           res.data.decoded = body;
-
           resolve(res.data);
         }
       );
     });
-  },
+  }
 
   /**
    * Create an encoded email message.
@@ -177,9 +151,8 @@ const cor = {
    * @param {String} bodyText Message body text/plain.
    * @param {String} bodyHtml Message body text/html.
    */
-  // TODO: Make multipart messages with same parts as original.
-  // FIXME: `from` is ignored, must be an alias?
-  makeMessage: (to, from, subject, bodyText, bodyHtml) => {
+  makeMessage(to, from, subject, bodyText, bodyHtml) {
+    // TODO: Add some random to boundary.
     const boundary = new Date().getTime();
     let str = [
       'MIME-Version: 1.0\n',
@@ -211,27 +184,28 @@ const cor = {
       '--' + boundary + '--\n'
     ].join('');
 
-    return cor.encodeMessage(str);
-  },
+    return this.encodeMessage(str);
+  }
 
   /**
    * Retrieve message contents given an Id.
    *
-   * @param {google.auth.OAuth2} auth An authorized OAuth2 client.
+   * @param {Object} token User's oAuth token
    * @param {String} to To email address
    * @param {String} from From email address
    * @param {String} subject Message subject.
    * @param {String} bodyText Message body text/plain.
    * @param {String} bodyHtml Message body text/html.
    */
-  sendMessage: (auth, to, from, subject, bodyText, bodyHtml) => {
-    return new Promise(function(resolve, reject) {
-      const gmail = google.gmail({ auth: auth, version: 'v1' });
+  sendMessage(token, to, from, subject, bodyText, bodyHtml) {
+    return new Promise((resolve, reject) => {
+      this.client.setCredentials(token);
+      const gmail = google.gmail({ auth: this.client, version: 'v1' });
       gmail.users.messages.send(
         {
           userId: 'me',
           resource: {
-            raw: cor.makeMessage(to, from, subject, bodyText, bodyHtml)
+            raw: this.makeMessage(to, from, subject, bodyText, bodyHtml)
           }
         },
         (err, res) => {
@@ -240,17 +214,18 @@ const cor = {
         }
       );
     });
-  },
+  }
 
   /**
    * Remove 'UNREAD' label given an Id.
    *
-   * @param {google.auth.OAuth2} auth An authorized OAuth2 client.
+   * @param {Object} token User's oAuth token
    * @param {String} messageId Message unique identifier.
    */
-  markAsRead: (auth, messageId) => {
-    return new Promise(function(resolve, reject) {
-      const gmail = google.gmail({ auth: auth, version: 'v1' });
+  markAsRead(token, messageId) {
+    return new Promise((resolve, reject) => {
+      this.client.setCredentials(token);
+      const gmail = google.gmail({ auth: this.client, version: 'v1' });
       gmail.users.messages.modify(
         {
           userId: 'me',
@@ -267,6 +242,7 @@ const cor = {
       );
     });
   }
-};
+}
 
-module.exports = cor;
+// FIXME: `export default Gmail;` requires bable.
+module.exports = Gmail;

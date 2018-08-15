@@ -1,5 +1,4 @@
 node_modules/
-credentials.json
+jobseekers/
 package-lock.json
-token.json
 .env
