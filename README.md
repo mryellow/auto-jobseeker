@@ -5,19 +5,18 @@ Taking the onerous data-entry pain out of compliance forms.
 ### Mode of action
 
 - Checks for `UNREAD` emails with `AutoJobseeker` label.
-- Crafts the appropriate subject line `FW Job Application Confirmation - JOBSEEKER_ID`
-- Forwards email to `jobsearcheffort@employment.gov.au` ~~from `JOBSEEKER_FROM`~~.
+- Crafts the appropriate subject line `FW Job Application Confirmation - ID`
+- Forwards email to `jobsearcheffort@employment.gov.au`.
+- Removes `UNREAD` label.
 
 ### Configuration
 
 Configuration information may be provided by adding a local `.env` file.
 
 ```
-JOBSEEKER_MODE=test
-JOBSEEKER_ID=XXX
+DBNAME=jobseekers
 JOBSEEKER_TO=jobsearcheffort@employment.gov.au
-JOBSEEKER_FROM=autojobseeker@example.com
-GOOGLE_CREDS={"installed":{"client_id":"XXXX"...
+GOOGLE_CREDS={"web":{"client_id":"XXXX"...
 ```
 
 ### Setup
@@ -25,4 +24,5 @@ GOOGLE_CREDS={"installed":{"client_id":"XXXX"...
 - Create a new ["oAuth client ID"](https://console.developers.google.com/apis/credentials).
 - Download the credentials JSON and copy it into `GOOGLE_CREDS` environment.
 - Create a label `AutoJobseeker` and filter messages into this label.
+- Run `node server.js` and hit http://localhost:3000/ to add users.
 - Run `node .` on this repository periodically.
