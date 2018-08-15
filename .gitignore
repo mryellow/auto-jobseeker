@@ -1,6 +1,4 @@
 node_modules/
-jobseekers/
-credentials.json
+orbitdb/
 package-lock.json
-token.json
 .env

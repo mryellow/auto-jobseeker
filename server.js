@@ -1,30 +1,27 @@
 require('dotenv').config();
+const fs = require('fs');
 const express = require('express');
 const app = express();
 const bodyParser = require('body-parser');
 const helmet = require('helmet');
 //const md5 = require('md5');
 //const path = require('path');
-const PouchDB = require('pouchdb-node');
+const IPFS = require('ipfs');
+const OrbitDB = require('orbit-db');
+
+const Gmail = require('./gmail.js');
+const gmail = new Gmail(JSON.parse(process.env.GOOGLE_CREDS));
+
+const ipfsOptions = {
+  EXPERIMENTAL: {
+    pubsub: true
+  }
+};
+
+const ipfs = new IPFS(ipfsOptions);
 
 const port = process.env.PORT || 3000;
 //const debug = process.env.NODE_ENV !== 'production';
-
-//.plugin(require('pouchdb-adapter-idb'))
-//.plugin(require('pouchdb-adapter-websql'))
-
-// TODO: Encapsulate duplication
-let pdb;
-if (process.env.DBHOST) {
-  pdb = new PouchDB(process.env.DBHOST + '/' + process.env.DBNAME, {
-    auth: {
-      username: process.env.DBUSER,
-      password: process.env.DBPWD
-    }
-  });
-} else {
-  pdb = new PouchDB(process.env.DBNAME);
-}
 
 app.use(helmet());
 app.use(bodyParser.urlencoded({ extended: false }));
@@ -46,52 +43,65 @@ function httpsRedirect(req, res, next) {
 // Redirect to https except on localhost
 app.use(httpsRedirect);
 
-app.get('/', function(req, res) {
-  const options = {
-    root: __dirname + '/',
-    dotfiles: 'deny'
-    /*
-    headers: {
-      'x-timestamp': Date.now(),
-      'x-sent': true,
-    },
-    */
-  };
+// Configure view engine
+app.engine('html', function(filePath, options, callback) {
+  const delimiter = '%%';
+  fs.readFile(filePath, function(err, content) {
+    if (err) return callback(err);
 
-  const fileName = 'server.html';
-  res.sendFile(fileName, options, function(err) {
-    if (err) {
-      next(err);
-    } else {
-      console.log('Sent:', fileName);
+    let rendered = content.toString();
+    for (let key in options) {
+      if (options.hasOwnProperty(key) && typeof options[key] === 'string') {
+        rendered = rendered.replace(delimiter + key + delimiter, options[key]);
+      }
     }
+    return callback(null, rendered);
   });
 });
+app.set('views', './views');
+app.set('view engine', 'html');
 
-app.post('/', function(req, res, next) {
-  console.log(req.body);
-  /*
-  if (!req || !req.body) return;
+ipfs.on('error', e => console.error(e));
+ipfs.on('ready', async () => {
+  const orbitdb = new OrbitDB(ipfs);
+  const db = await orbitdb.kvstore('settings');
+  await db.load();
 
-  pdb
-    .put(req.body)
-    .then(function(response) {
-      // handle response
-      res.json(response);
-    })
-    .catch(function(err) {
-      console.log(err);
-      res.status(err.status || 500);
-      res.json(err);
-    });
-    */
-});
+  app.get('/', function(req, res) {
+    const googleAuthUrl = gmail.getAuthUrl();
+    const googleAuthLink = googleAuthUrl
+      ? '<a href="' + googleAuthUrl + '">Authorise</a>'
+      : '';
 
-// Log errors
-app.use(function(err, req, res, next) {
-  console.error(err);
-});
+    res.render('index', { GoogleAuthLink: googleAuthLink });
+  });
 
-app.listen(port, function() {
-  console.log('Listening on port ' + port + '!');
+  app.get('/auth/google/callback', function(req, res) {
+    res.render('callback', { code: req.query.code });
+  });
+
+  app.post('/auth/google/callback', async function(req, res) {
+    req.body.token = await gmail.getToken(req.body.code);
+    delete req.body.code;
+
+    let length = db.get('length') || 0;
+    await db.put('length', ++length);
+    await db.put(length + '_id', req.body);
+    console.log(
+      '%s: Saved Jobseeker #%d ID: %s',
+      new Date().toISOString(),
+      length,
+      db.get(length + '_id').id
+    );
+    res.redirect('/');
+  });
+
+  // Log errors
+  app.use(function(err, req, res, next) {
+    console.error(err);
+  });
+
+  app.listen(port, function() {
+    console.log('Listening on port ' + port + '!');
+  });
 });
