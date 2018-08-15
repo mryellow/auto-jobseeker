@@ -1,3 +1,17 @@
-<h2>Allow this page to access Gmail</h2>
+<h2>Auto Jobseeker for Gmail</h2>
 
-%%GoogleAuthLink%%
+<h3>Mode of action</h3>
+
+<ul>
+  <li>Checks for <code>UNREAD</code> emails with <code>AutoJobseeker</code> label.
+  <li>Crafts the appropriate subject line <em>"FW Job Application Confirmation - ID"</em>
+  <li>Forwards email to <code>jobsearcheffort@employment.gov.au</code>.
+  <li>Removes <code>UNREAD</code> label.
+</ul>
+
+<h3>Setup</h3>
+
+<ul>
+  <li>Create a label <code>AutoJobseeker</code> and filter messages into this label.</li>
+  <li>%%GoogleAuthLink%% this app to access your Gmail account.</li>
+</ul>
